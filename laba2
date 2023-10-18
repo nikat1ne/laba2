@@ -1,0 +1,155 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace Labaratorka2
+{
+    class Employee // Класс с информацией о сотруднике
+    {
+        public string Name { get; set; }
+        public int Group { get; set; }
+
+        public Employee(string name, int group)
+        {
+            Name = name;
+            Group = Group;
+        }
+
+        public Employee CopyWith(string name = null, int? group = null)
+        {
+            return new Employee(name ?? Name, group ?? Group);
+        }
+    }
+
+    struct Department // Структура с информацией об имени отдела и сотрудниках в нем
+    {
+        public string Name { get; set; }
+        public List<Employee> Employees { get; set; }
+
+        public Department(string name)
+        {
+            Name = name; // название
+            Employees = new List<Employee>(); // список сотрудников
+        }
+
+        public Department With(string name = null, List<Employee> employees = null)
+        {
+            var newName = name ?? Name;
+            var newEmployees = employees ?? Employees;
+            return new Department { Name = newName, Employees = newEmployees };
+        }
+    }
+
+    class Program
+    {
+        static void Main(string[] args)
+        {
+            List<Department> departments = new List<Department>(); // создание спика отделов
+
+            while (true) // Интерактивный ввод
+            {
+                Console.WriteLine(" ");
+                Console.WriteLine("Выберите действие:");
+                Console.WriteLine("1. Добавить номер группы");
+                Console.WriteLine("2. Добавить преподователя");
+                Console.WriteLine("3. Вывести список групп и преподователей");
+                Console.WriteLine("4. Изменить данные о преподователе");
+                Console.WriteLine("5. Выход");
+
+                var choice = Console.ReadLine();
+
+                switch (choice)
+                {
+                    case "1": // создание отдела
+                        Console.WriteLine("Введите номер группы:");
+                        string departmentName = Console.ReadLine();
+                        Department department = new Department(departmentName); // создание нового объекта
+                        departments.Add(department); // добавление в список отделов
+                        Console.WriteLine($"Группа '{departmentName}' добавлена!");
+                        break;
+                    case "2": // создание преподователя и добавление его в группу
+                        Console.WriteLine("Введите номер группы, в которую вы хотите добавить преподователя:");
+                        string deptName = Console.ReadLine();
+                        var selectedDepartment = departments.Find(d => d.Name == deptName); // Поиск по номеру группы
+                        if (selectedDepartment.Equals(default(Department))) // проверка на существование введеного названия
+                        {
+                            Console.WriteLine("Группа не найдена.");
+                            break;
+                        }
+                        // Ввод данных о преподователе
+                        Console.WriteLine("Введите имя преподователя:");
+                        string employeeName = Console.ReadLine();
+                        Console.WriteLine("Введите группу преподователя:");
+                        int employeeGroup = int.Parse(Console.ReadLine());
+                        Employee employee = new Employee(employeeName, employeeGroup); // создание объекта сотрудника
+
+                    
+selectedDepartment = selectedDepartment.With(employees: new List<Employee>(selectedDepartment.Employees) { employee }); // обновление списка сотрудников в отделе
+                        int index = departments.FindIndex(d => d.Name == deptName);
+                        departments[index] = selectedDepartment;
+                        Console.WriteLine($"Преподователь '{employeeName}' добавлен в группу '{deptName}'.");
+                        break;
+                    case "3": // Вывод отделов и сотрудников
+                        Console.WriteLine("Список групп и преподователей:");
+                        foreach (var dept in departments) // Вывод каждой группы
+                        {
+                            Console.WriteLine($"Отдел: {dept.Name}");
+                            foreach (var emp in dept.Employees) // вывод каждого преподователя в группе
+                            {
+                                Console.WriteLine($"  Преподователь: {emp.Name}, Группа: {emp.Group}");
+                            }
+                        }
+                        break;
+                    case "4": // изменение данных сотрудника
+                        Console.WriteLine("Введите номер группы, в которой находится преподователь:");
+                        string deptNameToUpdate = Console.ReadLine();
+                        var departmentToUpdate = departments.Find(d => d.Name == deptNameToUpdate); // поиск отдела по имени
+                        if (departmentToUpdate.Equals(default(Department))) // проверка на сущестовование
+                        {
+                            Console.WriteLine("Группа не найдена.");
+                            break;
+                        }
+
+                        Console.WriteLine("Введите имя преподователя, данные которого вы хотите изменить:");
+                        string employeeNameToUpdate = Console.ReadLine();
+                        var employeeToUpdate = departmentToUpdate.Employees.Find(e => e.Name == employeeNameToUpdate); // поиск сотрудника по имени
+                        if (employeeToUpdate == null) // проверка на сущестовование
+                        {
+                            Console.WriteLine("Преподователь не найден.");
+                            break;
+                        }
+                        string newEmployeeName = null;
+                        int? newEmployeeGroup = null;
+
+                        Console.WriteLine("Введите новое имя преподователя (или нажмите Enter чтобы оставить без изменений):");
+                        string newNameInput = Console.ReadLine();
+                        if (!string.IsNullOrWhiteSpace(newNameInput))
+                        {
+                            newEmployeeName = newNameInput;
+                        }
+
+                        Console.WriteLine("Введите новую группу преподователя (или нажмите Enter чтобы оставить без изменений):");
+                        string groupInput = Console.ReadLine();
+                        if (!string.IsNullOrWhiteSpace(groupInput))
+                        {
+                            newEmployeeGroup = int.Parse(groupInput);
+                        }
+
+                                
+var updatedEmployee = employeeToUpdate.CopyWith(name: newEmployeeName, group: newEmployeeGroup); // Обоновляем данные о сотруднике
+                        departmentToUpdate = departmentToUpdate.With(employees: departmentToUpdate.Employees.Select(e => e.Name == employeeNameToUpdate ? updatedEmployee : e).ToList()); // Обновляем список преподователец в группе
+                        int updateIndex = departments.FindIndex(d => d.Name == deptNameToUpdate);
+                        departments[updateIndex] = departmentToUpdate;
+                        Console.WriteLine($"Данные преподователя '{employeeNameToUpdate}' обновлены.");
+                        break;
+                    case "5":
+                        Environment.Exit(0); // выход из программы
+                        break;
+                    default:
+                        Console.WriteLine("Неверный выбор. Пожалуйста, попробуйте снова.");
+                        break;
+                }
+            }
+        }
+    }
+}
